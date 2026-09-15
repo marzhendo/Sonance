@@ -1,0 +1,306 @@
+# Product Requirements Document (PRD)
+# Sonance — Voice Cloning & Real-time Voice Changer Platform
+
+**Versi:** 1.0
+**Status:** Draft untuk implementasi
+**Platform:** Web + Desktop
+
+---
+
+## 1. Ringkasan Produk
+
+Sonance adalah platform yang memungkinkan pengguna melakukan dua hal:
+
+1. **Voice Cloning (Offline/TTS)** — mengubah teks menjadi audio dengan karakter suara yang telah di-clone (suara sendiri atau orang lain, dengan sample yang sah).
+2. **Voice Changer (Real-time)** — mengubah karakter suara pengguna secara langsung saat berbicara (streaming), untuk dipakai di panggilan, streaming, atau rekaman.
+
+---
+
+## 2. Tujuan & Non-Tujuan
+
+### Tujuan
+- Menyediakan pipeline voice cloning dengan kualitas tinggi dari sample suara singkat.
+- Menyediakan voice changer real-time dengan latency serendah mungkin (target < 300ms end-to-end).
+- Mendukung penggunaan lintas platform: Web (browser) dan Desktop.
+- Memanfaatkan GPU lokal milik pengguna untuk seluruh proses training dan inference (bukan cloud, pada versi awal).
+
+### Non-Tujuan (di luar scope v1)
+- Tidak menyediakan hosting model sebagai layanan cloud multi-tenant skala besar.
+- Tidak menyediakan marketplace voice profile publik.
+- Tidak menangani moderasi konten audio secara otomatis (dicatat sebagai risiko, ditangani manual di v1).
+
+---
+
+## 3. Target Pengguna
+
+- Individu yang ingin membuat voice changer pribadi untuk streaming/gaming/konten kreatif.
+- Pengguna yang ingin melakukan voice cloning untuk keperluan personal (dubbing, konten, eksperimen kreatif) dengan persetujuan/sample suara sendiri atau yang diizinkan.
+
+---
+
+## 4. Arsitektur Sistem
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
+│   Client    │────▶│   Backend    │────▶│  Model Service   │
+│ (Web/Desktop)│ WS  │  (FastAPI)   │     │ (RVC / XTTS on   │
+│             │◀────│              │◀────│  local GPU)      │
+└─────────────┘     └──────────────┘     └─────────────────┘
+       │                    │
+       │                    ▼
+       │            ┌──────────────┐
+       └───────────▶│  Storage/DB  │
+                     │ (profiles,   │
+                     │  jobs, audio)│
+                     └──────────────┘
+```
+
+### Komponen Utama
+| Komponen | Teknologi |
+|---|---|
+| Voice Cloning (TTS) | Coqui XTTS-v2 / OpenVoice |
+| Real-time Voice Conversion | RVC (Retrieval-based Voice Conversion) |
+| Vocoder | HiFi-GAN |
+| Backend API | Python, FastAPI |
+| Real-time transport | WebSocket (binary frame untuk audio) |
+| Async job queue | Celery / RQ + Redis |
+| Inference optimization | ONNX Runtime / TensorRT |
+| Frontend Web | React / Next.js, Web Audio API |
+| Desktop | Electron/Tauri (wrap web) atau native Python (PyQt) |
+| Virtual audio routing | VB-Cable (Windows) / BlackHole (Mac) |
+| Audio storage format | Opus |
+
+---
+
+## 5. Alur Algoritma
+
+### A. Pembuatan Voice Profile
+1. Upload/rekam sample suara (idealnya 10–30 detik, minim noise).
+2. Preprocessing: noise reduction, normalisasi volume, resample sesuai kebutuhan model.
+3. Ekstraksi speaker embedding (content encoder + speaker embedding extractor).
+4. Simpan checkpoint hasil training/fine-tune.
+
+### B. Real-time Voice Changer
+1. Capture audio chunk dari mic (20–40ms per chunk).
+2. Ekstraksi fitur konten suara (pitch/F0 + phonetic content).
+3. Model voice conversion mengganti karakter suara, mempertahankan konten & intonasi.
+4. Vocoder merender kembali menjadi waveform.
+5. Stream ke output/virtual audio device.
+
+### C. Voice Cloning (TTS) Offline
+1. Teks di-tokenize menjadi urutan fonem.
+2. Acoustic model menghasilkan mel-spectrogram, dikondisikan pada speaker embedding target.
+3. Vocoder mengubah mel-spectrogram menjadi waveform audio final.
+
+---
+
+## 6. Keputusan Teknis Terkunci
+
+| Area | Keputusan |
+|---|---|
+| Model loading | **On-demand** — model di-load saat dibutuhkan, bukan standby permanen di GPU memory |
+| Concurrency | Sesi real-time voice changer **prioritas**; job TTS mengantre (queue) saat sesi real-time aktif |
+| Format audio storage | **Opus** (lossy, hemat storage) |
+| Transport audio real-time | WebSocket binary frame (bukan base64 JSON, untuk menghindari overhead ~33%) |
+
+### Implikasi Desain
+- Backend butuh model manager/cache layer untuk load-unload otomatis model, dengan indikator "Menyiapkan model..." di UI untuk menutupi cold-start delay.
+- Job queue (Celery/RQ + Redis) menangani TTS job; real-time session memegang resource lock GPU selama aktif.
+- Pipeline butuh tahap encode/decode Opus (audio asli dari vocoder berupa PCM/WAV, dikonversi ke Opus sebelum disimpan).
+
+---
+
+## 7. API Design
+
+### 7.1 REST Endpoints
+
+**Voice Profile Management**
+```
+POST   /api/v1/voice-profiles              # Upload sample, buat profile baru
+GET    /api/v1/voice-profiles              # List profile milik user
+GET    /api/v1/voice-profiles/{id}         # Detail satu profile
+DELETE /api/v1/voice-profiles/{id}         # Hapus profile
+PATCH  /api/v1/voice-profiles/{id}         # Update metadata
+POST   /api/v1/voice-profiles/{id}/train   # Trigger training (async job)
+GET    /api/v1/voice-profiles/{id}/status  # Cek status training
+```
+
+**TTS / Offline Cloning**
+```
+POST   /api/v1/tts/generate                # Body: {text, voice_profile_id, settings}
+GET    /api/v1/tts/jobs/{job_id}           # Cek status + hasil job
+```
+
+**Auth & User**
+```
+POST   /api/v1/auth/register
+POST   /api/v1/auth/login
+GET    /api/v1/auth/me
+```
+
+**System**
+```
+GET    /api/v1/gpu-status                  # Cek availability GPU
+```
+
+### 7.2 WebSocket Schema (Real-time Voice Changer)
+
+Endpoint: `wss://.../ws/voice-changer`
+
+**Connection flow:**
+```
+Client                          Server
+  │──── connect + auth token ────▶│
+  │◀─── {"type": "ready"} ────────│
+  │──── init_session ─────────────▶│
+  │◀─── {"type": "session_ready"} ─│
+  │──── audio_chunk (loop) ───────▶│
+  │◀─── audio_chunk (loop) ────────│
+  │──── close_session ────────────▶│
+```
+
+**Client → Server:**
+```json
+{
+  "type": "init_session",
+  "voice_profile_id": "uuid",
+  "settings": {
+    "pitch_shift": 0,
+    "sample_rate": 16000,
+    "chunk_duration_ms": 30
+  }
+}
+```
+```
+<binary PCM audio data>
+```
+```json
+{ "type": "update_settings", "settings": { "pitch_shift": 2 } }
+{ "type": "close_session" }
+```
+
+**Server → Client:**
+```json
+{ "type": "session_ready", "session_id": "uuid" }
+{ "type": "error", "message": "...", "code": "MODEL_LOAD_FAILED" }
+```
+```
+<binary PCM audio data>
+```
+```json
+{ "type": "metrics", "latency_ms": 87, "processing_ms": 45 }
+```
+
+---
+
+## 8. Database Schema
+
+**users**
+```sql
+id              UUID PK
+email           VARCHAR UNIQUE
+password_hash   VARCHAR
+created_at      TIMESTAMP
+```
+
+**voice_profiles**
+```sql
+id                    UUID PK
+user_id               UUID FK -> users.id
+name                  VARCHAR
+source_type           ENUM('own_voice', 'other_person', 'character')
+status                ENUM('pending', 'processing', 'ready', 'failed')
+sample_audio_path     VARCHAR   -- Opus
+model_checkpoint_path VARCHAR
+duration_seconds      FLOAT
+error_message         TEXT NULL
+created_at            TIMESTAMP
+updated_at            TIMESTAMP
+```
+
+**training_jobs**
+```sql
+id                UUID PK
+voice_profile_id  UUID FK -> voice_profiles.id
+status            ENUM('queued', 'processing', 'completed', 'failed')
+progress_pct      INT DEFAULT 0
+started_at        TIMESTAMP NULL
+completed_at      TIMESTAMP NULL
+error_log         TEXT NULL
+```
+
+**tts_jobs**
+```sql
+id                  UUID PK
+user_id             UUID FK -> users.id
+voice_profile_id    UUID FK -> voice_profiles.id
+input_text          TEXT
+status              ENUM('queued', 'processing', 'completed', 'failed')
+output_audio_path   VARCHAR NULL   -- Opus
+settings            JSONB
+created_at          TIMESTAMP
+completed_at        TIMESTAMP NULL
+```
+
+**vc_sessions**
+```sql
+id                UUID PK
+user_id           UUID FK -> users.id
+voice_profile_id  UUID FK -> voice_profiles.id
+started_at        TIMESTAMP
+ended_at          TIMESTAMP NULL
+avg_latency_ms    FLOAT NULL
+settings          JSONB
+```
+
+**Relasi:**
+```
+users (1) ──< (N) voice_profiles
+voice_profiles (1) ──< (N) training_jobs
+voice_profiles (1) ──< (N) tts_jobs
+voice_profiles (1) ──< (N) vc_sessions
+users (1) ──< (N) tts_jobs / vc_sessions
+```
+
+**Voice Profile Lifecycle:**
+```
+[Upload sample] → status: pending → (queue) → status: processing
+                                          │
+                              ┌───────────┴───────────┐
+                              ▼                       ▼
+                       status: ready           status: failed
+```
+
+Catatan desain: `sample_audio_path` dan `model_checkpoint_path` dipisah karena siklus hidupnya berbeda — sample bisa dihapus setelah training selesai, checkpoint tetap disimpan untuk inference.
+
+---
+
+## 9. Tooling & Development Workflow
+
+- **Spec-driven development** menggunakan AI coding agent.
+- Skill yang digunakan (terpasang di `.zcode/skills`):
+  - `to-spec` — mengubah hasil diskusi/PRD menjadi spec resmi
+  - `to-tickets` — memecah spec menjadi ticket kerja
+  - `implement` — eksekusi ticket dengan TDD
+  - `code-review` — review standar kode + kesesuaian spec
+  - `grill-with-docs` — sesi klarifikasi mendalam + membangun `CONTEXT.md`
+- **anti-slop** — filter kualitas UI/copy/code agar tidak generik, diatur lewat `AGENTS.md`.
+
+---
+
+## 10. Risiko & Catatan Terbuka
+
+- **Latency real-time**: perlu tuning ukuran chunk (kecil = kualitas turun, besar = delay terasa).
+- **Keterbatasan GPU tunggal**: hanya 1 GPU lokal, berpotensi jadi bottleneck jika ada multi-user di masa depan — perlu resource lock/queue yang solid.
+- **Reconnection handling**: strategi reconnect WebSocket di tengah sesi real-time (auto-resume vs re-init) belum diputuskan final.
+- **Rate limiting**: mekanisme pembatasan resource untuk melindungi GPU tunggal dari overload belum dirancang detail.
+- **Etika & legal**: voice cloning berpotensi disalahgunakan (deepfake audio). Pertimbangkan watermarking atau mekanisme consent jika dirilis lebih luas ke publik.
+
+---
+
+## 11. Next Steps
+
+1. Finalisasi `CONTEXT.md` domain project via `grill-with-docs`.
+2. Konversi PRD ini menjadi spec formal via `to-spec`.
+3. Breakdown spec menjadi tickets via `to-tickets`.
+4. Mulai implementasi bertahap (voice profile management → TTS pipeline → real-time voice changer) via `implement`.
