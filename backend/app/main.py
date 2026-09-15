@@ -1,0 +1,23 @@
+﻿from fastapi import FastAPI
+
+from backend.app.routers.voice_profile_router import router as voice_profile_router
+
+
+def create_app() -> FastAPI:
+    """Factory function untuk membuat instans aplikasi FastAPI Sonance."""
+    app = FastAPI(
+        title="Sonance API",
+        version="0.1.0",
+        description="Sonance Voice Cloning and Real-time Voice Changer API",
+    )
+
+    app.include_router(voice_profile_router, prefix="/api/v1")
+
+    @app.get("/health", tags=["system"], summary="Health check")
+    def health_check():
+        return {"status": "ok"}
+
+    return app
+
+
+app = create_app()
