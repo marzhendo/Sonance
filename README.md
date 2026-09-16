@@ -39,9 +39,31 @@ Opsi CLI tambahan:
 - `--burst`: Memproses semua job yang ada di antrian saat ini lalu keluar otomatis.
 - `--queue <nama>`: Menentukan antrian spesifik yang diproses (default: `training`).
 
-### 3. Menjalankan API Server (FastAPI)
+### 3. Menjalankan TTS Worker Daemon
 
-Jalankan FastAPI server dengan broker Redis yang sama agar job training di-enqueue ke worker:
+Worker mendengarkan antrian job sintesis suara offline menggunakan RQ (Redis Queue) dengan proteksi GPU lock wait & timeout 30 menit.
+
+**PowerShell (Windows):**
+```powershell
+$env:SONANCE_REDIS_URL = "redis://localhost:6379/0"
+$env:PYTHONPATH = "."
+python -m backend.workers.tts_worker
+```
+
+**Bash (Linux / macOS):**
+```bash
+export SONANCE_REDIS_URL="redis://localhost:6379/0"
+export PYTHONPATH="."
+python -m backend.workers.tts_worker
+```
+
+Opsi CLI tambahan:
+- `--burst`: Memproses semua job yang ada di antrian saat ini lalu keluar otomatis.
+- `--queue <nama>`: Menentukan antrian spesifik yang diproses (default: `tts`).
+
+### 4. Menjalankan API Server (FastAPI)
+
+Jalankan FastAPI server dengan broker Redis yang sama agar job training dan TTS di-enqueue ke worker:
 
 **PowerShell (Windows):**
 ```powershell
@@ -61,7 +83,7 @@ python -m uvicorn backend.app.main:app --reload
 
 Jika `SONANCE_REDIS_URL` tidak diset, API server otomatis fallback ke mode in-memory queue.
 
-### 4. Menjalankan Test Suite
+### 5. Menjalankan Test Suite
 
 Test suite berjalan sepenuhnya terisolasi dan cepat tanpa memerlukan instance Redis:
 
@@ -69,3 +91,4 @@ Test suite berjalan sepenuhnya terisolasi dan cepat tanpa memerlukan instance Re
 $env:PYTHONPATH = "."
 python -m pytest backend/tests/ -v
 ```
+

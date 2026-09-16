@@ -8,7 +8,7 @@ Relasi:
 """
 import uuid
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import (
     VARCHAR,
@@ -26,6 +26,7 @@ from backend.app.core.database import Base
 from backend.app.core.db_types import UUIDType
 
 if TYPE_CHECKING:
+    from backend.app.models.tts_job_model import TTSJob
     from backend.app.models.training_job_model import TrainingJob
     from backend.app.models.user_model import User
 
@@ -114,6 +115,13 @@ class VoiceProfile(Base):
         "TrainingJob",
         back_populates="voice_profile",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    # Relasi 1-to-N ke TTSJob (cascade delete)
+    tts_jobs: Mapped[List["TTSJob"]] = relationship(
+        "TTSJob",
+        back_populates="voice_profile",
         cascade="all, delete-orphan",
     )
 

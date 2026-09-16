@@ -1,5 +1,6 @@
-﻿from fastapi import FastAPI
+from fastapi import FastAPI
 
+from backend.app.routers.tts_router import router as tts_router
 from backend.app.routers.voice_profile_router import router as voice_profile_router
 
 
@@ -12,6 +13,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(voice_profile_router, prefix="/api/v1")
+    app.include_router(tts_router, prefix="/api/v1/tts")
 
     @app.get("/health", tags=["system"], summary="Health check")
     def health_check():
