@@ -113,11 +113,16 @@ ACTIVE (audio chunks flowing)
 Aturan ini bersifat invariant — tidak boleh dilanggar oleh implementasi manapun.
 
 1. **Hanya satu VC Session yang boleh aktif dalam satu waktu.** (single-user constraint)
-2. **Selama VC Session aktif atau dalam GRACE_PERIOD, GPU Lock dipegang.** TTS queue di-pause.
-3. **TTS job melanjutkan eksekusi segera setelah GPU Lock dilepas** (sesi ended).
-4. **Tidak ada batas durasi maksimum VC Session.** Sesi bisa berjalan tanpa batas waktu.
-5. **Model loading bersifat on-demand.** Tidak ada model yang standby permanen di GPU memory.
-6. **Source type memengaruhi model yang di-load.** `own_voice` dan `other_person` pakai RVC pipeline; `character` bisa pakai pipeline berbeda (ditentukan lebih lanjut di spec).
+2. **Prioritas Simetris GPU Lock:** Siapa pun yang duluan memanggil `acquire_lock()` berhak menggunakan GPU, yang lain menunggu atau gagal secara gracefully.
+3. **TTS berpartisipasi aktif dalam GPU Lock:** Sebelum memanggil `pipeline.synthesize()`, worker TTS memanggil `acquire_lock(session_id=f"tts-{job_id}")` dan melepasnya via `try/finally`.
+4. **Perilaku saat GPU Terkunci:**
+   - Jika VC Session memegang lock: worker TTS menunggu dalam backoff polling loop (timeout 30 menit).
+   - Jika TTS job memegang lock: inisialisasi VC Session (`init_session`) ditolak dengan error `GPU_BUSY` tanpa auto-retry di server.
+5. **Selama VC Session aktif atau dalam GRACE_PERIOD, GPU Lock dipegang.**
+6. **TTS job melanjutkan eksekusi segera setelah GPU Lock dilepas** (sesi ended).
+7. **Tidak ada batas durasi maksimum VC Session.** Sesi bisa berjalan tanpa batas waktu.
+8. **Model loading bersifat on-demand.** Tidak ada model yang standby permanen di GPU memory.
+9. **Source type memengaruhi model yang di-load.** `own_voice` dan `other_person` pakai RVC pipeline; `character` bisa pakai pipeline berbeda (ditentukan lebih lanjut di spec).
 
 ---
 
@@ -213,11 +218,14 @@ wss://.../ws/voice-changer?token={api_token}
 **Alasan:** Mencegah VRAM exhaustion jika ada multiple model type (RVC + XTTS).  
 **Konsekuensi:** Ada cold-start delay. UI wajib menampilkan indikator "Menyiapkan model...".
 
-### ADR-005: TTS queue di-pause saat VC Session aktif
-**Konteks:** GPU tunggal tidak bisa melayani real-time inference dan batch job bersamaan tanpa degradasi latency.  
-**Keputusan:** TTS job worker di-pause selama GPU Lock dipegang oleh VC Session. Resume otomatis saat GPU Lock dilepas.  
-**Alasan:** Latency real-time voice changer adalah prioritas utama (target < 300ms).  
-**Konsekuensi:** TTS job bisa mengalami delay tak terduga jika user menjalankan VC Session panjang.
+### ADR-005: Koordinasi Simetris GPU Lock antara Real-time Voice Changer dan TTS
+**Konteks:** GPU tunggal tidak bisa melayani real-time inference dan batch job bersamaan tanpa degradasi performa atau Out of Memory.  
+**Keputusan:** Protokol lock simetris melalui `GPUResourceManager`. Siapa pun yang duluan memanggil `acquire_lock()` berhak menggunakan GPU; pihak lain menunggu atau gagal secara gracefully:
+- Jika VC Session aktif atau dalam GRACE_PERIOD: TTS worker menunggu dalam backoff polling loop (timeout 30 menit).
+- Jika TTS job sedang aktif memegang lock (`tts-{job_id}`): inisialisasi VC Session (`init_session`) ditolak dengan error code `GPU_BUSY` ("GPU sedang memproses TTS job, coba lagi sesaat lagi") tanpa retry otomatis di server.
+- Setelah proses selesai (atau dibatalkan), lock dilepas via blok `try/finally`.  
+**Alasan:** Menghindari race condition dan menjaga integritas VRAM GPU tanpa mengorbankan stabilitas pipeline salah satu pihak.  
+**Konsekuensi:** Klien voice changer harus siap menerima `GPU_BUSY` dan memutuskan waktu coba ulang dari sisi klien jika TTS job sedang aktif.
 
 ### ADR-006: Voice Profile 1-to-1 dengan Training Job
 **Konteks:** Scope v1.  

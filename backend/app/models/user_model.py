@@ -16,6 +16,7 @@ from backend.app.core.database import Base
 from backend.app.core.db_types import UUIDType
 
 if TYPE_CHECKING:
+    from backend.app.models.tts_job_model import TTSJob
     from backend.app.models.voice_profile_model import VoiceProfile
 
 
@@ -56,6 +57,11 @@ class User(Base):
         "VoiceProfile",
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+
+    tts_jobs: Mapped[List["TTSJob"]] = relationship(
+        "TTSJob",
+        back_populates="user",
     )
 
     def __repr__(self) -> str:

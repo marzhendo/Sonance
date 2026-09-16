@@ -58,6 +58,7 @@ def db_engine():
     from backend.app.models.user_model import User                    # noqa: F401
     from backend.app.models.voice_profile_model import VoiceProfile   # noqa: F401
     from backend.app.models.training_job_model import TrainingJob     # noqa: F401
+    from backend.app.models.tts_job_model import TTSJob               # noqa: F401
 
     engine = create_engine(
         "sqlite:///:memory:",
@@ -208,6 +209,38 @@ def make_training_job(db_session, make_voice_profile):
         db_session.add(tj)
         db_session.flush()
         return tj
+
+    return _factory
+
+
+@pytest.fixture
+def make_tts_job(db_session, make_voice_profile):
+    """
+    Factory fixture - buat dan persist TTSJob dummy.
+
+    Penggunaan:
+        job = make_tts_job()
+        job = make_tts_job(voice_profile=vp, status="processing")
+    """
+    from backend.app.models.tts_job_model import TTSJob
+
+    def _factory(user=None, voice_profile=None, **kwargs) -> TTSJob:
+        if voice_profile is None:
+            voice_profile = make_voice_profile(user=user, status="ready")
+        actual_user_id = user.id if user is not None else voice_profile.user_id
+        data = {
+            "id": uuid.uuid4(),
+            "user_id": actual_user_id,
+            "voice_profile_id": voice_profile.id,
+            "input_text": "Contoh input teks untuk sintesis suara TTS.",
+            "status": "queued",
+            "settings": {"language": "id", "speed": 1.0, "pitch_shift": 0, "temperature": 0.7, "output_format": "opus"},
+        }
+        data.update(kwargs)
+        job = TTSJob(**data)
+        db_session.add(job)
+        db_session.flush()
+        return job
 
     return _factory
 

@@ -13,6 +13,8 @@ Before starting, ask the user when antislop applies: during the work, or after i
 
 ### Background Worker and Queue
 - Broker: Redis Queue (RQ) configured via `SONANCE_REDIS_URL`.
-- Default queue name: `training`.
-- Run worker daemon: `python -m backend.workers.training_worker` (requires `SONANCE_REDIS_URL`).
+- Default queue names: `training` (model training), `tts` (offline speech synthesis).
+- Run worker daemon:
+  - Training worker: `python -m backend.workers.training_worker` (requires `SONANCE_REDIS_URL`).
+  - TTS worker: `python -m backend.workers.tts_worker` (requires `SONANCE_REDIS_URL`).
 - Tests: Test suite uses in-memory queue fallback (`InMemoryQueue`) by default without requiring an active Redis server.

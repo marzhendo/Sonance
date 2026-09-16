@@ -14,17 +14,19 @@ from alembic import context
 # Tambahkan root project ke sys.path agar import backend.* bisa resolve
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-# Import Base dan semua model — WAJIB agar autogenerate bekerja
+# Import Base dan semua model agar autogenerate bekerja
 from backend.app.core.database import Base  # noqa: F401
 from backend.app.models.voice_profile_model import VoiceProfile  # noqa: F401
 from backend.app.models.training_job_model import TrainingJob      # noqa: F401
+from backend.app.models.tts_job_model import TTSJob  # noqa: F401
 
 # Alembic Config object — akses ke nilai di alembic.ini
 config = context.config
 
-# Setup logging dari alembic.ini
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+# Setup logging dari alembic.ini (skip saat running di pytest agar caplog tidak terhapus)
+if config.config_file_name is not None and not os.environ.get("PYTEST_CURRENT_TEST"):
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
+
 
 # Target metadata untuk autogenerate
 target_metadata = Base.metadata
@@ -55,13 +57,13 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Jalankan migration dalam 'online' mode (dengan koneksi aktif)."""
-    # Override sqlalchemy.url dari env var jika ada
     db_url = get_database_url()
+    configuration = dict(config.get_section(config.config_ini_section, {}))
     if db_url:
-        config.set_main_option("sqlalchemy.url", db_url)
+        configuration["sqlalchemy.url"] = db_url
 
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
