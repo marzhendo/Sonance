@@ -17,6 +17,7 @@ from backend.app.core.db_types import UUIDType
 
 if TYPE_CHECKING:
     from backend.app.models.tts_job_model import TTSJob
+    from backend.app.models.vc_session_model import VCSession
     from backend.app.models.voice_profile_model import VoiceProfile
 
 
@@ -61,6 +62,11 @@ class User(Base):
 
     tts_jobs: Mapped[List["TTSJob"]] = relationship(
         "TTSJob",
+        back_populates="user",
+    )
+
+    vc_sessions: Mapped[List["VCSession"]] = relationship(
+        "VCSession",
         back_populates="user",
     )
 

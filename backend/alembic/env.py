@@ -19,6 +19,7 @@ from backend.app.core.database import Base  # noqa: F401
 from backend.app.models.voice_profile_model import VoiceProfile  # noqa: F401
 from backend.app.models.training_job_model import TrainingJob      # noqa: F401
 from backend.app.models.tts_job_model import TTSJob  # noqa: F401
+from backend.app.models.vc_session_model import VCSession  # noqa: F401
 
 # Alembic Config object — akses ke nilai di alembic.ini
 config = context.config

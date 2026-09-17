@@ -59,6 +59,7 @@ def db_engine():
     from backend.app.models.voice_profile_model import VoiceProfile   # noqa: F401
     from backend.app.models.training_job_model import TrainingJob     # noqa: F401
     from backend.app.models.tts_job_model import TTSJob               # noqa: F401
+    from backend.app.models.vc_session_model import VCSession         # noqa: F401
 
     engine = create_engine(
         "sqlite:///:memory:",
@@ -241,6 +242,36 @@ def make_tts_job(db_session, make_voice_profile):
         db_session.add(job)
         db_session.flush()
         return job
+
+    return _factory
+
+
+@pytest.fixture
+def make_vc_session(db_session, make_voice_profile):
+    """
+    Factory fixture: buat dan persist VCSession dummy.
+
+    Penggunaan:
+        session = make_vc_session()
+        session = make_vc_session(voice_profile=vp, avg_latency_ms=85.0)
+    """
+    from backend.app.models.vc_session_model import VCSession
+
+    def _factory(user=None, voice_profile=None, **kwargs) -> VCSession:
+        if voice_profile is None:
+            voice_profile = make_voice_profile(user=user, status="ready")
+        actual_user_id = user.id if user is not None else voice_profile.user_id
+        data = {
+            "id": uuid.uuid4(),
+            "user_id": actual_user_id,
+            "voice_profile_id": voice_profile.id,
+            "settings": {"pitch_shift": 0, "sample_rate": 16000, "chunk_duration_ms": 30},
+        }
+        data.update(kwargs)
+        vc_session = VCSession(**data)
+        db_session.add(vc_session)
+        db_session.flush()
+        return vc_session
 
     return _factory
 
