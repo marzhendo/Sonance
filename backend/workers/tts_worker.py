@@ -114,55 +114,75 @@ def execute_tts_job(
             if poll_interval > 0:
                 time.sleep(poll_interval)
 
-        # 2. Transisi state awal pemrosesan: processing
-        service.update_start(job_id=job.id, db=session)
+        # 2. Acquire GPU lock secara aktif (partisipasi simetris dengan real-time session)
+        lock_session_id = f"tts-{job.id}"
+        if not gpu_mgr.acquire_lock(session_id=lock_session_id):
+            logger.info(
+                "GPU lock contention terdeteksi untuk TTSJob %s, mengembalikan ke antrian.",
+                job.id,
+            )
+            if job.gpu_wait_started_at is not None:
+                job.gpu_wait_started_at = None
+                session.add(job)
+                session.commit()
+                session.refresh(job)
+            return {
+                "status": "queued",
+                "tts_job_id": str(job.id),
+                "error": "GPU lock contention (real-time session took precedence)",
+            }
 
-        # 3. Ambil voice profile terkait
-        vp = session.get(VoiceProfile, job.voice_profile_id)
-        if not vp:
-            raise ValueError(f"VoiceProfile dengan ID {job.voice_profile_id} tidak ditemukan.")
-
-        checkpoint_path = vp.model_checkpoint_path or vp.sample_audio_path or ""
-        active_pipeline = pipeline or XTTSPipeline()
-
-        dest_dir = output_dir or os.environ.get(
-            "SONANCE_TTS_OUTPUT_DIR", "/tmp/sonance/tts_output"
-        )
-        os.makedirs(dest_dir, exist_ok=True)
-
-        # 4. Eksekusi pipeline sintesis
         try:
-            output_path = active_pipeline.synthesize(
-                text=job.input_text,
-                voice_profile_checkpoint_path=checkpoint_path,
-                settings=job.settings or {},
-                output_dir=dest_dir,
-                progress_cb=progress_cb,
-            )
-            service.complete(
-                job_id=job.id,
-                output_audio_path=output_path,
-                db=session,
-            )
-            return {
-                "status": "completed",
-                "tts_job_id": str(job.id),
-                "output_audio_path": output_path,
-            }
-        except Exception as err:
-            logger.exception("Error saat eksekusi pipeline TTS: %s", err)
-            error_summary = str(err) or "Kegagalan pada pipeline sintesis TTS."
-            service.fail(
-                job_id=job.id,
-                error_message=error_summary,
-                db=session,
-            )
-            return {
-                "status": "failed",
-                "tts_job_id": str(job.id),
-                "error": error_summary,
-            }
+            # 3. Transisi state awal pemrosesan: processing
+            service.update_start(job_id=job.id, db=session)
 
+            # 4. Ambil voice profile terkait
+            vp = session.get(VoiceProfile, job.voice_profile_id)
+            if not vp:
+                raise ValueError(f"VoiceProfile dengan ID {job.voice_profile_id} tidak ditemukan.")
+
+            checkpoint_path = vp.model_checkpoint_path or vp.sample_audio_path or ""
+            active_pipeline = pipeline or XTTSPipeline()
+
+            dest_dir = output_dir or os.environ.get(
+                "SONANCE_TTS_OUTPUT_DIR", "/tmp/sonance/tts_output"
+            )
+            os.makedirs(dest_dir, exist_ok=True)
+
+            # 5. Eksekusi pipeline sintesis
+            try:
+                output_path = active_pipeline.synthesize(
+                    text=job.input_text,
+                    voice_profile_checkpoint_path=checkpoint_path,
+                    settings=job.settings or {},
+                    output_dir=dest_dir,
+                    progress_cb=progress_cb,
+                )
+                service.complete(
+                    job_id=job.id,
+                    output_audio_path=output_path,
+                    db=session,
+                )
+                return {
+                    "status": "completed",
+                    "tts_job_id": str(job.id),
+                    "output_audio_path": output_path,
+                }
+            except Exception as err:
+                logger.exception("Error saat eksekusi pipeline TTS: %s", err)
+                error_summary = str(err) or "Kegagalan pada pipeline sintesis TTS."
+                service.fail(
+                    job_id=job.id,
+                    error_message=error_summary,
+                    db=session,
+                )
+                return {
+                    "status": "failed",
+                    "tts_job_id": str(job.id),
+                    "error": error_summary,
+                }
+        finally:
+            gpu_mgr.release_lock(session_id=lock_session_id)
     finally:
         if owns_session:
             session.close()

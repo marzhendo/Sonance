@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from backend.app.models.tts_job_model import TTSJob
     from backend.app.models.training_job_model import TrainingJob
     from backend.app.models.user_model import User
+    from backend.app.models.vc_session_model import VCSession
 
 
 def _utcnow() -> datetime:
@@ -121,6 +122,13 @@ class VoiceProfile(Base):
     # Relasi 1-to-N ke TTSJob (cascade delete)
     tts_jobs: Mapped[List["TTSJob"]] = relationship(
         "TTSJob",
+        back_populates="voice_profile",
+        cascade="all, delete-orphan",
+    )
+
+    # Relasi 1-to-N ke VCSession (cascade delete)
+    vc_sessions: Mapped[List["VCSession"]] = relationship(
+        "VCSession",
         back_populates="voice_profile",
         cascade="all, delete-orphan",
     )

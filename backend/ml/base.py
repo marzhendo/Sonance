@@ -67,3 +67,60 @@ class TTSPipeline(ABC):
             Exception: Jika proses sintesis gagal.
         """
         pass
+
+
+class VoiceConversionPipeline(ABC):
+    """
+    Interface abstrak untuk semua pipeline real-time voice conversion.
+    Menerapkan pemrosesan audio berbasis chunk secara real-time.
+    """
+
+    @abstractmethod
+    def load_model(self, checkpoint_path: str) -> None:
+        """
+        Memuat bobot model checkpoint ke dalam memori GPU on-demand.
+
+        Args:
+            checkpoint_path: Path absolut ke file model checkpoint (.pth).
+
+        Raises:
+            Exception: Jika pemuatan model gagal.
+        """
+        pass
+
+    @abstractmethod
+    def unload_model(self) -> None:
+        """Membongkar model dari memori GPU untuk menghemat VRAM."""
+        pass
+
+    @abstractmethod
+    def convert_chunk(
+        self,
+        pcm_bytes: bytes,
+        settings: dict,
+    ) -> bytes:
+        """
+        Mengonversi satu frame audio raw PCM menjadi suara target.
+
+        Args:
+            pcm_bytes: Potongan data audio PCM input (16-bit mono).
+            settings: Konfigurasi konversi suara (pitch_shift, sample_rate, dsb).
+
+        Returns:
+            bytes: Potongan data audio PCM hasil konversi.
+
+        Raises:
+            Exception: Jika inferensi gagal atau model belum dimuat.
+        """
+        pass
+
+    @abstractmethod
+    def is_loaded(self) -> bool:
+        """
+        Mengecek apakah model saat ini sedang termuat di memori.
+
+        Returns:
+            bool: True jika model sedang aktif dimuat, False jika tidak.
+        """
+        pass
+
