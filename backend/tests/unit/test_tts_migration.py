@@ -54,7 +54,9 @@ class TestTTSMigration:
 
         cfg = Config("alembic.ini")
         script_dir = ScriptDirectory.from_config(cfg)
-        assert "0002" in script_dir.get_heads()
+        rev = script_dir.get_revision("0002")
+        assert rev is not None
+        assert rev.down_revision == "0001"
 
     def test_tts_migration_upgrade_and_downgrade(self, alembic_cfg, temp_db_url):
         """Memverifikasi skema tabel tts_jobs saat upgrade dan pembersihan saat downgrade."""
