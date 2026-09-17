@@ -101,10 +101,10 @@ Setiap task didesain sebagai tracer-bullet slice yang dapat diuji secara mandiri
     - _Blocked by: Task 7_
 
 ### Wave 8: Checkpoint Final
-- [ ] 9. Checkpoint Final Real-time Voice Changer
-  - [ ] 9.1 Jalankan full test suite (`pytest backend/tests/ -v`) dan pastikan 100% lulus (Voice Profile + TTS Pipeline + Real-time Voice Changer) tanpa regresi.
-  - [ ] 9.2 Verifikasi rantai migrasi Alembic (0000 -> 0001 -> 0002 -> 0003) berjalan lancar pada upgrade dan downgrade.
-  - [ ] 9.3 Verifikasi kepatuhan terhadap aturan antislop, tidak ada em dash, dan konvensi penamaan seragam.
+- [x] 9. Checkpoint Final Real-time Voice Changer
+  - [x] 9.1 Jalankan full test suite (`pytest backend/tests/ -v`) dan pastikan 100% lulus (Voice Profile + TTS Pipeline + Real-time Voice Changer) tanpa regresi.
+  - [x] 9.2 Verifikasi rantai migrasi Alembic (0000 -> 0001 -> 0002 -> 0003) berjalan lancar pada upgrade dan downgrade.
+  - [x] 9.3 Verifikasi kepatuhan terhadap aturan antislop, tidak ada em dash, dan konvensi penamaan seragam.
   - _Blocked by: Task 8_
 
 ---

@@ -1,6 +1,6 @@
 """
 ORM model untuk tabel training_jobs.
-Wave 1 — Task 1.3.
+Wave 1: Task 1.3.
 
 Relasi:
   - voice_profiles (1) ──< (1) training_jobs  [UNIQUE FK, CASCADE on delete]
@@ -8,7 +8,7 @@ Relasi:
 Constraint penting:
   - voice_profile_id UNIQUE  → menegakkan relasi 1-to-1 (ADR-006)
   - ON DELETE CASCADE        → terhapus otomatis saat VoiceProfile dihapus
-  - progress_pct CHECK 0–100 → invariant untuk status polling
+  - progress_pct CHECK 0-100 → invariant untuk status polling
 """
 import uuid
 from datetime import datetime
@@ -37,7 +37,7 @@ class TrainingJob(Base):
     """
     Merepresentasikan satu proses training async untuk sebuah VoiceProfile.
 
-    Relasi 1-to-1 dengan VoiceProfile — satu VoiceProfile hanya boleh punya
+    Relasi 1-to-1 dengan VoiceProfile: satu VoiceProfile hanya boleh punya
     satu TrainingJob (ADR-006). Tidak ada retry yang membuat job baru; jika
     training gagal, user harus membuat VoiceProfile baru.
 

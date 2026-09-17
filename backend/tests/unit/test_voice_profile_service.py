@@ -1,5 +1,5 @@
 """Tests untuk VoiceProfileService.
-Wave 4 — Service Layer.
+Wave 4: Service Layer.
 """
 import io
 import os

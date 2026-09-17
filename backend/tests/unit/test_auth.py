@@ -1,6 +1,6 @@
 """
 Tests untuk Auth Guard.
-Wave 2 — Task 3.1.
+Wave 2: Task 3.1.
 
 Tests ini gagal dulu (Red), lalu auth guard diimplementasikan (Green).
 """
@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 
 # ---------------------------------------------------------------------------
-# Helpers — buat mini app untuk test dependency
+# Helpers: buat mini app untuk test dependency
 # ---------------------------------------------------------------------------
 
 def make_app(token_override: str | None = None):
@@ -137,7 +137,7 @@ class TestVerifyToken:
         assert resp.status_code == 401
 
     def test_token_with_extra_space_returns_401(self):
-        """Token dengan trailing space harus 401 — tidak ada whitespace tolerance."""
+        """Token dengan trailing space harus 401: tidak ada whitespace tolerance."""
         client = self._client()
         resp = client.get(
             "/protected",

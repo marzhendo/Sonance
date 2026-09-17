@@ -21,7 +21,7 @@ from backend.app.models.training_job_model import TrainingJob      # noqa: F401
 from backend.app.models.tts_job_model import TTSJob  # noqa: F401
 from backend.app.models.vc_session_model import VCSession  # noqa: F401
 
-# Alembic Config object — akses ke nilai di alembic.ini
+# Alembic Config object: akses ke nilai di alembic.ini
 config = context.config
 
 # Setup logging dari alembic.ini (skip saat running di pytest agar caplog tidak terhapus)

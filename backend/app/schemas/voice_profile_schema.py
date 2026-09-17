@@ -1,9 +1,9 @@
 """
 Pydantic schemas untuk Voice Profile Management.
-Wave 2 — Task 2.1.
+Wave 2: Task 2.1.
 
 Prinsip field exposure:
-  - sample_audio_path dan model_checkpoint_path adalah path internal server —
+  - sample_audio_path dan model_checkpoint_path adalah path internal server,
     tidak di-expose ke client di response schema apapun.
   - error_message: None saat tidak ada error, string saat status=failed.
   - Semua field name di-trim (strip) sebelum disimpan.
@@ -114,7 +114,7 @@ class VoiceProfileRenameRequest(BaseModel):
 
 class TrainingJobStatusResponse(BaseModel):
     """
-    Status training job — embedded di VoiceProfileStatusResponse.
+    Status training job: embedded di VoiceProfileStatusResponse.
     Tidak di-expose sebagai endpoint mandiri.
     """
     status: str

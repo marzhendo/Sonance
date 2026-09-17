@@ -1,8 +1,8 @@
 """
 Shared test fixtures untuk seluruh test suite Sonance backend.
-Wave 3 — Task 15.1 (updated: proper test isolation via nested transaction).
+Wave 3: Task 15.1 (updated: proper test isolation via nested transaction).
 
-Isolation strategy — Nested Transaction + SAVEPOINT pattern (SQLAlchemy 2.x):
+Isolation strategy: Nested Transaction + SAVEPOINT pattern (SQLAlchemy 2.x):
 
   Cara kerja:
   1. db_engine (scope=session): satu engine SQLite in-memory, schema dibuat sekali.
@@ -46,7 +46,7 @@ TEST_TOKEN = "test-sonance-token"
 
 
 # ===========================================================================
-# Database Engine — satu engine per test session (SQLite in-memory)
+# Database Engine: satu engine per test session (SQLite in-memory)
 # ===========================================================================
 
 @pytest.fixture(scope="session")
@@ -64,6 +64,7 @@ def db_engine():
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
+        echo=False,
     )
 
     @event.listens_for(engine, "connect")
@@ -84,7 +85,7 @@ def db_engine():
 
 
 # ===========================================================================
-# Database Session — true isolation via nested transaction
+# Database Session: true isolation via nested transaction
 # ===========================================================================
 
 @pytest.fixture
@@ -130,7 +131,7 @@ def db_session(db_engine) -> Generator[Session, None, None]:
 @pytest.fixture
 def make_user(db_session):
     """
-    Factory fixture — buat dan persist User dummy.
+    Factory fixture: buat dan persist User dummy.
 
     Penggunaan:
         user = make_user()
@@ -156,7 +157,7 @@ def make_user(db_session):
 @pytest.fixture
 def make_voice_profile(db_session, make_user):
     """
-    Factory fixture — buat dan persist VoiceProfile dummy.
+    Factory fixture: buat dan persist VoiceProfile dummy.
     FK ke users selalu valid; user dibuat otomatis jika tidak diberikan.
 
     Penggunaan:
@@ -188,7 +189,7 @@ def make_voice_profile(db_session, make_user):
 @pytest.fixture
 def make_training_job(db_session, make_voice_profile):
     """
-    Factory fixture — buat dan persist TrainingJob dummy.
+    Factory fixture: buat dan persist TrainingJob dummy.
 
     Penggunaan:
         tj = make_training_job()

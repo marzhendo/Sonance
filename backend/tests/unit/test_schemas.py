@@ -1,6 +1,6 @@
 """
 Tests untuk Pydantic schemas: VoiceProfile dan TrainingJob.
-Wave 2 — Task 2.1.
+Wave 2: Task 2.1.
 
 Tests ini gagal dulu (Red), lalu schemas diimplementasikan (Green).
 """
@@ -222,7 +222,7 @@ class TestVoiceProfileResponse:
             assert hasattr(resp, field)
 
     def test_model_checkpoint_path_not_exposed(self):
-        """model_checkpoint_path adalah internal — tidak boleh ada di response schema."""
+        """model_checkpoint_path adalah internal, tidak boleh ada di response schema."""
         from backend.app.schemas.voice_profile_schema import VoiceProfileResponse
         fields = VoiceProfileResponse.model_fields
         assert "model_checkpoint_path" not in fields, (
@@ -231,7 +231,7 @@ class TestVoiceProfileResponse:
         )
 
     def test_sample_audio_path_not_exposed(self):
-        """sample_audio_path adalah path internal — tidak boleh ada di response schema."""
+        """sample_audio_path adalah path internal, tidak boleh ada di response schema."""
         from backend.app.schemas.voice_profile_schema import VoiceProfileResponse
         fields = VoiceProfileResponse.model_fields
         assert "sample_audio_path" not in fields
