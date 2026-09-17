@@ -74,7 +74,17 @@ async def voice_changer_ws(
     """
     # 1. Autentikasi token via query parameter (?token=...)
     expected_token = os.environ.get("SONANCE_API_TOKEN", "")
-    if not token or not expected_token or not secrets.compare_digest(token, expected_token):
+    token_valid = False
+    if token and expected_token:
+        try:
+            token_valid = secrets.compare_digest(
+                token.encode("utf-8"),
+                expected_token.encode("utf-8"),
+            )
+        except Exception:
+            token_valid = False
+
+    if not token_valid:
         logger.warning("Koneksi WebSocket ditolak: token autentikasi tidak valid atau tidak ada.")
         await websocket.close(
             code=status.WS_1008_POLICY_VIOLATION,

@@ -91,8 +91,8 @@ Setiap task didesain sebagai tracer-bullet slice yang dapat diuji secara mandiri
     - _Blocked by: Task 6_
 
 ### Wave 7: Property-Based Testing
-- [ ] 8. Property-Based Testing dengan Hypothesis untuk Voice Changer
-  - [ ] 8.1 Buat property tests di `backend/tests/integration/test_vc_properties.py`
+- [x] 8. Property-Based Testing dengan Hypothesis untuk Voice Changer
+  - [x] 8.1 Buat property tests di `backend/tests/integration/test_vc_properties.py`
     - **Property 1**: Validasi Settings (pitch shift [-12, 12] valid vs invalid, sample rate whitelist valid vs invalid, chunk duration [10, 100]).
     - **Property 2**: Invariant Ukuran Frame Audio PCM (untuk semua kombinasi valid `sample_rate` dan `chunk_duration_ms`, ukuran byte frame sama persis dengan `sample_rate * (chunk_duration_ms / 1000) * 2`).
     - **Property 3**: Rejection Voice Profile Not Ready (profil status non-ready selalu memicu error `PROFILE_NOT_READY`).
