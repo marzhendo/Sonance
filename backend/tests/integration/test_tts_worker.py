@@ -6,10 +6,12 @@ import threading
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
 import pytest
 
 from backend.app.core.gpu_manager import get_gpu_manager
 from backend.app.services.tts_job_service import GPU_TIMEOUT_ERROR_MESSAGE
+from backend.ml.base import TTSPipeline
 from backend.ml.xtts import XTTSPipeline
 from backend.workers.tts_worker import execute_tts_job, process_queue_jobs
 
@@ -228,3 +230,131 @@ class TestTTSWorkerExecution:
         db_session.refresh(j2)
         assert j1.status == "completed"
         assert j2.status == "completed"
+
+    def test_execute_acquires_and_releases_lock_symmetrically(
+        self, db_session, test_user, ready_voice_profile, make_tts_job, tmp_path
+    ):
+        """TTS worker memegang GPU lock selama proses sintesis dan melepaskannya setelah selesai."""
+        gpu = get_gpu_manager()
+        job = make_tts_job(
+            user=test_user,
+            voice_profile=ready_voice_profile,
+            input_text="Cek kepemilikan lock GPU selama sintesis.",
+        )
+        expected_holder = f"tts-{job.id}"
+
+        class LockCheckingPipeline(TTSPipeline):
+            def __init__(self):
+                self.lock_held = False
+                self.holder_matched = False
+
+            def synthesize(
+                self, text, voice_profile_checkpoint_path, settings, output_dir, progress_cb=None
+            ) -> str:
+                self.lock_held = gpu.is_locked()
+                self.holder_matched = (gpu.get_holder() == expected_holder)
+                out_file = os.path.join(output_dir, "output.opus")
+                with open(out_file, "wb") as f:
+                    f.write(b"dummy audio")
+                return out_file
+
+        check_pipeline = LockCheckingPipeline()
+        result = execute_tts_job(
+            tts_job_id=job.id,
+            db=db_session,
+            pipeline=check_pipeline,
+            output_dir=str(tmp_path),
+        )
+
+        assert result["status"] == "completed"
+        assert check_pipeline.lock_held is True
+        assert check_pipeline.holder_matched is True
+        assert gpu.is_locked() is False
+        assert gpu.get_holder() is None
+
+    def test_execute_calls_acquire_and_release_with_exact_session_id(
+        self, db_session, test_user, ready_voice_profile, make_tts_job, tmp_path
+    ):
+        """execute_tts_job memanggil acquire_lock dan release_lock dengan session_id f'tts-{id}'."""
+        gpu = get_gpu_manager()
+        mock_gpu = MagicMock(wraps=gpu)
+
+        job = make_tts_job(
+            user=test_user,
+            voice_profile=ready_voice_profile,
+            input_text="Cek parameter session_id lock.",
+        )
+        expected_id = f"tts-{job.id}"
+
+        result = execute_tts_job(
+            tts_job_id=job.id,
+            db=db_session,
+            gpu_manager=mock_gpu,
+            output_dir=str(tmp_path),
+        )
+
+        assert result["status"] == "completed"
+        mock_gpu.acquire_lock.assert_called_once_with(session_id=expected_id)
+        mock_gpu.release_lock.assert_called_once_with(session_id=expected_id)
+        assert gpu.is_locked() is False
+
+    def test_execute_releases_lock_on_pipeline_exception(
+        self, db_session, test_user, ready_voice_profile, make_tts_job, tmp_path
+    ):
+        """release_lock tetap dipanggil meski pipeline.synthesize() melempar exception."""
+        gpu = get_gpu_manager()
+        mock_gpu = MagicMock(wraps=gpu)
+
+        job = make_tts_job(
+            user=test_user,
+            voice_profile=ready_voice_profile,
+            input_text="Teks untuk simulasi exception pipeline.",
+        )
+        expected_id = f"tts-{job.id}"
+        failing_pipeline = XTTSPipeline(simulate_failure=True)
+
+        result = execute_tts_job(
+            tts_job_id=job.id,
+            db=db_session,
+            pipeline=failing_pipeline,
+            gpu_manager=mock_gpu,
+            output_dir=str(tmp_path),
+        )
+
+        assert result["status"] == "failed"
+        mock_gpu.acquire_lock.assert_called_once_with(session_id=expected_id)
+        mock_gpu.release_lock.assert_called_once_with(session_id=expected_id)
+        assert gpu.is_locked() is False
+
+    def test_execute_race_condition_gpu_contention_returns_to_queue(
+        self, db_session, test_user, ready_voice_profile, make_tts_job, tmp_path
+    ):
+        """Saat acquire_lock gagal karena race condition, job tetap queued dan gpu_wait_started_at di-reset."""
+        gpu = get_gpu_manager()
+        mock_gpu = MagicMock(wraps=gpu)
+        mock_gpu.is_locked.return_value = False
+        mock_gpu.acquire_lock.return_value = False
+
+        past_wait = datetime.now(timezone.utc) - timedelta(seconds=10)
+        job = make_tts_job(
+            user=test_user,
+            voice_profile=ready_voice_profile,
+            input_text="Teks untuk race condition GPU contention.",
+            gpu_wait_started_at=past_wait,
+        )
+
+        result = execute_tts_job(
+            tts_job_id=job.id,
+            db=db_session,
+            gpu_manager=mock_gpu,
+            output_dir=str(tmp_path),
+        )
+
+        assert result["status"] == "queued"
+        assert "GPU lock contention" in result.get("error", "")
+
+        db_session.refresh(job)
+        assert job.status == "queued"
+        assert job.started_at is None
+        assert job.completed_at is None
+        assert job.gpu_wait_started_at is None
