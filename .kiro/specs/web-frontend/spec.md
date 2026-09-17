@@ -127,9 +127,16 @@ Halaman ini mengelola repositori karakter suara pengguna.
      - Orang Lain (`other_person`)
      - Karakter Rekaan (`character`)
    - File dropzone untuk mengunggah sample audio:
-     - Format yang didukung: WAV, MP3, OGG, FLAC, Opus, AAC, M4A.
-     - Batas ukuran file: 50MB.
-     - Pratinjau durasi audio langsung sebelum dikirim (memastikan 5.0 - 300.0 detik).
+      - Format file: HANYA berkas `.opus` (Ogg container dengan payload Opus). File picker HTML dibatasi secara ketat via atribut `accept=".opus,audio/ogg,audio/opus"`. Validasi sisi klien menolak ekstensi berkas non-opus sebelum upload dicoba.
+      - Batas ukuran file: Maksimum 10 MB (`MAX_SAMPLE_AUDIO_SIZE = 10 * 1024 * 1024` bytes). Validasi ukuran dilakukan langsung saat berkas dipilih.
+      - Batas durasi audio: Wajib berada di antara 10.0 hingga 30.0 detik (persis sesuai `validate_and_extract_duration` di backend).
+      - Pre-upload client duration check: Durasi audio dibaca di peramban sebelum formulir di-submit menggunakan Web Audio API (`AudioContext.decodeAudioData` atau parser granule Ogg Opus) agar pengguna mendapat umpan balik instan tanpa menunggu kegagalan dari server.
+      - Petunjuk & pesan kesalahan UI yang jelas:
+        - Dropzone menampilkan teks panduan: *"Format: .opus | Durasi: 10 - 30 detik | Ukuran: Maks. 10 MB"*.
+        - Pesan error validasi spesifik:
+          - Format salah: *"Format file tidak valid. Hanya file berformat Opus (.opus) yang diterima."*
+          - Durasi tidak sesuai: *"Durasi audio harus berada di antara 10 hingga 30 detik (terdeteksi: {durasi} detik)."*
+          - Ukuran melebihi batas: *"Ukuran file melebihi batas maksimum 10 MB (terdeteksi: {ukuran} MB)."*
    - Indikator progres unggah berkas multipart form data.
 3. **Pemicu Pelatihan (Trigger Training) & Polling:**
    - Tombol **Mulai Latih** memanggil `POST /api/v1/voice-profiles/{id}/train`.

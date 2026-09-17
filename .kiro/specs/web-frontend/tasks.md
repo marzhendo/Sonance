@@ -62,7 +62,7 @@ Setiap task didesain agar dapat diuji secara mandiri dengan unit testing dan moc
     - _Blocked by: Task 2.2_
   - [ ] 4.2 Komponen UI Profil: `ProfileCard.tsx`, `CreateProfileDialog.tsx`, `RenameProfileDialog.tsx`
     - Kartu profil menampilkan nama, sumber (`own_voice`/`other_person`/`character`), durasi audio, badge status (`pending`/`processing`/`ready`/`failed`), dan bilah progres pelatihan.
-    - Dialog pembuatan profil dengan input nama, dropdown sumber suara, dan file upload dropzone (validasi tipe file audio dan durasi 5-300 detik via elemen audio HTML5).
+    - Dialog pembuatan profil dengan input nama, dropdown sumber suara, dan file upload dropzone yang mengunci format hanya berkas Opus (.opus, accept=".opus,audio/ogg,audio/opus"), validasi ukuran file maksimal 10 MB, validasi durasi 10-30 detik via Web Audio API (decodeAudioData) sebelum submit, serta pesan error validasi yang spesifik dan jelas.
     - Dialog ubah nama dan dialog konfirmasi hapus permanen.
     - _Blocked by: Task 4.1_
   - [ ] 4.3 Integrasi Halaman `app/profiles/page.tsx`
