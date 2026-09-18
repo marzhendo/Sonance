@@ -3,7 +3,9 @@ import localFont from "next/font/local"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/query-provider"
+import { AuthProvider } from "@/lib/auth-context"
 import { Navbar } from "@/components/navbar"
+import { TokenModal } from "@/components/token-modal"
 import { Toaster } from "@/components/ui/sonner"
 
 const geistSans = localFont({
@@ -39,11 +41,14 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <div className="relative flex min-h-screen flex-col">
-              <Navbar />
-              <main className="flex-1">{children}</main>
-            </div>
-            <Toaster position="top-right" richColors closeButton />
+            <AuthProvider>
+              <div className="relative flex min-h-screen flex-col">
+                <Navbar />
+                <main className="flex-1">{children}</main>
+              </div>
+              <TokenModal />
+              <Toaster position="top-right" richColors closeButton />
+            </AuthProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

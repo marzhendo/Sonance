@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Mic, Radio, Volume2, Waves } from "lucide-react"
+import { KeyRound, Mic, Radio, Volume2, Waves } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useAuth } from "@/hooks/use-auth"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 const NAV_ITEMS = [
@@ -14,6 +16,7 @@ const NAV_ITEMS = [
 
 export function Navbar() {
   const pathname = usePathname()
+  const { isAuthenticated, openTokenModal } = useAuth()
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -48,6 +51,18 @@ export function Navbar() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant={isAuthenticated ? "outline" : "default"}
+            size="sm"
+            onClick={openTokenModal}
+            className="flex items-center gap-1.5 text-xs"
+            title={isAuthenticated ? "Kelola API Token" : "Atur API Token"}
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">
+              {isAuthenticated ? "API Token" : "Set API Token"}
+            </span>
+          </Button>
           <ThemeToggle />
         </div>
       </div>

@@ -4,10 +4,10 @@
 
 **Blocked by:** 01: Project Setup, Tooling, and Theme Shell
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] API client wrapper in `lib/api.ts` supporting type-safe GET, POST, PUT, DELETE, and multipart requests.
-- [ ] Bearer token persistence via `localStorage` with fallback to `NEXT_PUBLIC_API_TOKEN` environment variable.
-- [ ] React Auth Context providing `token`, `setToken`, `clearToken`, and `isAuthenticated`.
-- [ ] Global token input dialog appearing on 401 response or when unconfigured.
-- [ ] Custom hook `useAuth` exposing auth state and actions.
+- [x] API client wrapper in `lib/api-client.ts` supporting type-safe GET, POST, PUT, DELETE, and multipart requests.
+- [x] Bearer token persistence via `localStorage` with fallback to `NEXT_PUBLIC_API_TOKEN` environment variable.
+- [x] React Auth Context providing `token`, `setToken`, `clearToken`, and `isAuthenticated`.
+- [x] Global token input dialog appearing on 401 response or when unconfigured.
+- [x] Custom hook `useAuth` exposing auth state and actions.
