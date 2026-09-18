@@ -1,6 +1,6 @@
 """
 Pydantic schemas untuk Training Job.
-Wave 2 — Task 2.1 (training job responses).
+Wave 2: Task 2.1 (training job responses).
 """
 import uuid
 

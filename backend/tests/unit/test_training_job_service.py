@@ -1,5 +1,5 @@
 """Tests untuk TrainingJobService.
-Wave 4 — Task 9.1 (dispatch).
+Wave 4: Task 9.1 (dispatch).
 """
 import uuid
 from unittest.mock import MagicMock

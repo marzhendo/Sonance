@@ -279,6 +279,10 @@ class VCSessionManager:
             db_sess.refresh(vc_record)
 
             # Daftarkan state ke runtime in-memory map
+            session_start = vc_record.started_at or now
+            if session_start.tzinfo is None:
+                session_start = session_start.replace(tzinfo=timezone.utc)
+
             active_state = ActiveSessionState(
                 session_id=new_session_id,
                 user_id=user_uuid,
@@ -286,7 +290,7 @@ class VCSessionManager:
                 settings=vc_settings,
                 state=SessionState.ACTIVE,
                 pipeline=pipeline,
-                started_at=vc_record.started_at,
+                started_at=session_start,
                 websocket=websocket,
             )
             self._active_sessions[new_session_id] = active_state

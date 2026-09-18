@@ -2,7 +2,7 @@
 ORM model untuk tabel users.
 
 Schema dari PRD-Sonance.md § 8. Database Schema.
-Single-user v1 — auth hanya sebagai guard, bukan multi-tenant.
+Single-user v1: auth hanya sebagai guard, bukan multi-tenant.
 """
 import uuid
 from datetime import datetime, timezone

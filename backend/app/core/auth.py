@@ -1,13 +1,13 @@
 """
 Auth Guard untuk Sonance API.
-Wave 2 — Task 3.1.
+Wave 2: Task 3.1.
 
 Implementasi:
   - Token-based auth menggunakan SONANCE_API_TOKEN (ADR-001).
   - Token dikirim via header Authorization: Bearer <token> untuk REST endpoints.
-    (Query param hanya dipakai untuk WebSocket — ADR-002.)
+    (Query param hanya dipakai untuk WebSocket, sesuai ADR-002.)
   - Single-user v1: tidak ada multi-tenant, tidak ada JWT expiry/refresh.
-  - user_id dikembalikan sebagai string konstan dari config — satu user per instalasi.
+  - user_id dikembalikan sebagai string konstan dari config (satu user per instalasi).
 
 Kondisi yang ditangani (Requirement 8):
   1. Token absent (header tidak ada)         → HTTP 401
@@ -38,7 +38,7 @@ _UNAUTHORIZED = HTTPException(
 
 async def verify_token(authorization: str = Header(default=None)) -> str:
     """
-    FastAPI dependency — validasi API token dari header Authorization.
+    FastAPI dependency: validasi API token dari header Authorization.
 
     Returns:
         user_id (str): identifier user yang terautentikasi.

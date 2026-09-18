@@ -1,6 +1,6 @@
 """
 ORM model untuk tabel voice_profiles.
-Wave 1 — Task 1.2 (updated: native UUID type, FK ke users enforced).
+Wave 1: Task 1.2 (updated: native UUID type, FK ke users enforced).
 
 Relasi:
   - users (1) ──< (N) voice_profiles
@@ -111,7 +111,7 @@ class VoiceProfile(Base):
         back_populates="voice_profiles",
     )
 
-    # Relasi 1-to-1 ke TrainingJob (cascade delete — ADR-006)
+    # Relasi 1-to-1 ke TrainingJob (cascade delete, sesuai ADR-006)
     training_job: Mapped[Optional["TrainingJob"]] = relationship(
         "TrainingJob",
         back_populates="voice_profile",

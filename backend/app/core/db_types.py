@@ -4,7 +4,7 @@ Custom SQLAlchemy type decorators untuk kompatibilitas cross-dialect.
 UUIDType:
   - PostgreSQL (production): delegasi ke native UUID dialect type
   - SQLite (testing): simpan sebagai CHAR(36) string, kembalikan sebagai uuid.UUID
-    object di level Python — representasi tetap UUID, bukan plain string.
+    object di level Python: representasi tetap UUID, bukan plain string.
 """
 import uuid
 
@@ -31,7 +31,7 @@ class UUIDType(TypeDecorator):
 
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":
-            # Pakai native UUID PostgreSQL — lebih efisien, index lebih cepat
+            # Pakai native UUID PostgreSQL: lebih efisien, index lebih cepat
             return dialect.type_descriptor(PG_UUID(as_uuid=True))
         else:
             # SQLite, MySQL, dan lainnya: simpan sebagai CHAR(36)

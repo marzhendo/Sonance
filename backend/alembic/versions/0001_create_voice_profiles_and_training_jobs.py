@@ -1,6 +1,6 @@
 """create voice_profiles and training_jobs tables
 
-Wave 0 — Task 1.1
+Wave 0: Task 1.1
 Spec: Voice Profile Management
 
 Schema dikunci dari:

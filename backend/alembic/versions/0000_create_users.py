@@ -1,13 +1,13 @@
 """create users table
 
-Migration awal — harus dijalankan sebelum 0001.
+Migration awal, harus dijalankan sebelum 0001.
 Tabel users adalah prerequisite FK untuk voice_profiles.user_id.
 
 Schema dari PRD-Sonance.md § 8. Database Schema:
   users: id, email, password_hash, created_at
 
 Revision ID: 0000
-Revises: (none — initial)
+Revises: (none, initial)
 Create Date: 2026-09-13
 """
 from alembic import op

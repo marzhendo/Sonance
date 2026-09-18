@@ -229,13 +229,12 @@ def parse_server_message(data: Union[str, dict]) -> ServerMessage:
 # ---------------------------------------------------------------------------
 # Helper Validasi Audio PCM (Binary)
 # ---------------------------------------------------------------------------
-
 def calculate_expected_pcm_bytes(sample_rate: int, chunk_duration_ms: int) -> int:
     """
     Menghitung ukuran byte yang diharapkan untuk frame audio raw PCM (16-bit signed integer, mono).
-    Rumus: sample_rate * (chunk_duration_ms / 1000) * 2 bytes.
+    Rumus: int(sample_rate * (chunk_duration_ms / 1000)) * 2 bytes.
     """
-    return int(sample_rate * (chunk_duration_ms / 1000.0) * 2)
+    return int(sample_rate * (chunk_duration_ms / 1000.0)) * 2
 
 
 def validate_pcm_frame(

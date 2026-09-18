@@ -1,6 +1,6 @@
 """
 Tests untuk ORM models: User, VoiceProfile, dan TrainingJob.
-Wave 1 — Task 1.2 dan 1.3 (updated: native UUIDType, FK users enforced).
+Wave 1: Task 1.2 dan 1.3 (updated: native UUIDType, FK users enforced).
 
 Fixtures `session` dan `engine` disediakan oleh conftest.py.
 Factories `make_user` dan `make_voice_profile` disediakan oleh conftest.py
@@ -14,7 +14,7 @@ from sqlalchemy import inspect
 
 
 # ---------------------------------------------------------------------------
-# Local helpers — wrapper tipis atas factory fixtures
+# Local helpers: wrapper tipis atas factory fixtures
 # (dipakai oleh tests yang tidak bisa menerima fixture factory langsung)
 # ---------------------------------------------------------------------------
 
@@ -54,7 +54,7 @@ def _make_voice_profile(session, user=None, **kwargs):
 
 
 # ---------------------------------------------------------------------------
-# User model — sanity checks
+# User model: sanity checks
 # ---------------------------------------------------------------------------
 
 class TestUserModel:
@@ -77,7 +77,7 @@ class TestUserModel:
         email = f"dup_{uuid.uuid4().hex[:8]}@test.com"
         _make_user(session, email=email)
         session.commit()
-        # Buat user kedua dengan email yang sama — harus raise IntegrityError
+        # Buat user kedua dengan email yang sama: harus raise IntegrityError
         # saat flush (karena UNIQUE constraint)
         from backend.app.models.user_model import User
         dup = User(id=uuid.uuid4(), email=email, password_hash="hashed")
@@ -138,7 +138,7 @@ class TestVoiceProfileModel:
         assert required.issubset(cols)
 
     def test_fk_to_users_enforced(self, session):
-        """user_id harus FK valid — insert dengan user_id tidak dikenal harus gagal."""
+        """user_id harus FK valid: insert dengan user_id tidak dikenal harus gagal."""
         from backend.app.models.voice_profile_model import VoiceProfile
         from sqlalchemy.exc import IntegrityError
         orphan = VoiceProfile(

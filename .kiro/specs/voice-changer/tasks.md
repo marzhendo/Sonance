@@ -91,8 +91,8 @@ Setiap task didesain sebagai tracer-bullet slice yang dapat diuji secara mandiri
     - _Blocked by: Task 6_
 
 ### Wave 7: Property-Based Testing
-- [ ] 8. Property-Based Testing dengan Hypothesis untuk Voice Changer
-  - [ ] 8.1 Buat property tests di `backend/tests/integration/test_vc_properties.py`
+- [x] 8. Property-Based Testing dengan Hypothesis untuk Voice Changer
+  - [x] 8.1 Buat property tests di `backend/tests/integration/test_vc_properties.py`
     - **Property 1**: Validasi Settings (pitch shift [-12, 12] valid vs invalid, sample rate whitelist valid vs invalid, chunk duration [10, 100]).
     - **Property 2**: Invariant Ukuran Frame Audio PCM (untuk semua kombinasi valid `sample_rate` dan `chunk_duration_ms`, ukuran byte frame sama persis dengan `sample_rate * (chunk_duration_ms / 1000) * 2`).
     - **Property 3**: Rejection Voice Profile Not Ready (profil status non-ready selalu memicu error `PROFILE_NOT_READY`).
@@ -101,10 +101,10 @@ Setiap task didesain sebagai tracer-bullet slice yang dapat diuji secara mandiri
     - _Blocked by: Task 7_
 
 ### Wave 8: Checkpoint Final
-- [ ] 9. Checkpoint Final Real-time Voice Changer
-  - [ ] 9.1 Jalankan full test suite (`pytest backend/tests/ -v`) dan pastikan 100% lulus (Voice Profile + TTS Pipeline + Real-time Voice Changer) tanpa regresi.
-  - [ ] 9.2 Verifikasi rantai migrasi Alembic (0000 -> 0001 -> 0002 -> 0003) berjalan lancar pada upgrade dan downgrade.
-  - [ ] 9.3 Verifikasi kepatuhan terhadap aturan antislop, tidak ada em dash, dan konvensi penamaan seragam.
+- [x] 9. Checkpoint Final Real-time Voice Changer
+  - [x] 9.1 Jalankan full test suite (`pytest backend/tests/ -v`) dan pastikan 100% lulus (Voice Profile + TTS Pipeline + Real-time Voice Changer) tanpa regresi.
+  - [x] 9.2 Verifikasi rantai migrasi Alembic (0000 -> 0001 -> 0002 -> 0003) berjalan lancar pada upgrade dan downgrade.
+  - [x] 9.3 Verifikasi kepatuhan terhadap aturan antislop, tidak ada em dash, dan konvensi penamaan seragam.
   - _Blocked by: Task 8_
 
 ---

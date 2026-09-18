@@ -1,8 +1,8 @@
 """
 Tests untuk memverifikasi fixture infrastructure dari conftest.py.
-Wave 3 — Task 15.1.
+Wave 3: Task 15.1.
 
-Ini bukan test untuk fitur aplikasi — ini test untuk memastikan
+Ini bukan test untuk fitur aplikasi, ini test untuk memastikan
 scaffolding test itu sendiri bekerja benar sebelum Wave 4 dan Wave 6.
 """
 import uuid
@@ -44,7 +44,7 @@ class TestDbSessionFixture:
         assert result_after is None, "Setelah rollback, data tidak boleh ada"
 
     def test_session_isolated_between_tests_part2(self, db_session, make_user):
-        """Setiap test mendapat session bersih — rollback dari fixture terjadi antar test."""
+        """Setiap test mendapat session bersih, rollback dari fixture terjadi antar test."""
         from backend.app.models.user_model import User
         from sqlalchemy import select
 
